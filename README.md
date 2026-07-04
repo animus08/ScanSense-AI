@@ -7,6 +7,10 @@
   </p>
 
   <p>
+    <b>🌐 Live URL: <a href="https://scansense-ai-nppn.onrender.com">scansense-ai-nppn.onrender.com</a></b>
+  </p>
+
+  <p>
     <img src="https://img.shields.io/badge/Python-3.11-blue?logo=python&logoColor=white" />
     <img src="https://img.shields.io/badge/FastAPI-0.111-009688?logo=fastapi&logoColor=white" />
     <img src="https://img.shields.io/badge/Vanilla_JS-Build--Free-yellow?logo=javascript&logoColor=black" />
