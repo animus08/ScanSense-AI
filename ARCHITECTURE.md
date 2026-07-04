@@ -54,19 +54,19 @@ import PyPDF2
 from PIL import Image
 
 # Initialize Database correctly from backend directory
-from database.db_manager import (
+from .database.db_manager import (
     init_db, create_session, save_message, get_chat_history,
     get_all_sessions, delete_session, update_session_context,
     get_session_context, save_memory_summary, get_recent_memory_summaries
 )
-from utils.ai_assistant import stream_chat_response, is_medical_content, summarize_session
+from .utils.ai_assistant import stream_chat_response, is_medical_content, summarize_session
 
 app = FastAPI(title="ScanSense AI API")
 
 # Add CORS middleware for frontend communication
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"], 
+    allow_origins=["*"],  # Allow all origins since frontend is served from same server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -458,16 +458,11 @@ CRITICAL CONTENT RULES - DO NOT VIOLATE:
 
 ---
 
-## 🚀 6. Conclusion
-ScanSense AI represents a masterclass in modern, decoupled-yet-unified application design. By abandoning heavy frontend build pipelines and relying on pure Browser APIs and FastAPI streaming, the codebase achieves near-instant startup times, minimal memory footprints, and extreme extensibility.
-
----
-
-## 🎨 7. Styling & CSS Architecture (`frontend/styles.css`)
+## 🎨 6. Styling & CSS Architecture (`frontend/styles.css`)
 
 While Tailwind CSS handles 95% of the styling through utility classes in `index.html` and `app.js`, `styles.css` is reserved for complex, custom behaviors that Tailwind either cannot do natively or that would result in excessively long class strings.
 
-### 7.1 Custom Scrollbars
+### 6.1 Custom Scrollbars
 Webkit browsers (Chrome, Safari, Edge) allow deep customization of scrollbars. We hide the ugly default blocky scrollbars and replace them with sleek, modern, fading ones.
 
 ```css
@@ -494,7 +489,7 @@ Webkit browsers (Chrome, Safari, Edge) allow deep customization of scrollbars. W
 - We override the base `::-webkit-scrollbar` pseudo-element to shrink it to `6px`.
 - By setting the `track` to `transparent`, the scrollbar visually "floats" over the content instead of carving out a rigid gray box on the side of the screen.
 
-### 7.2 Custom Animations
+### 6.2 Custom Animations
 Tailwind includes basic animations (spin, pulse, ping), but we needed custom keyframes for the chat bubbles and the typing indicator.
 
 ```css
@@ -520,7 +515,7 @@ Tailwind includes basic animations (spin, pulse, ping), but we needed custom key
 - The `.animate-float` is applied to the brain logo in the empty state screen, giving it a subtle hovering effect.
 - The `.typing-dot` leverages `animation-delay` offsets. Because child 1 starts at `-0.32s` and child 2 at `-0.16s`, they don't bounce at the exact same time, creating a "wave" effect.
 
-### 7.3 CSS Variables (Theaming)
+### 6.3 CSS Variables (Theaming)
 The entire dark/light mode system relies on CSS variables defined in `:root` and `.dark`.
 
 ```css
@@ -539,7 +534,9 @@ The entire dark/light mode system relies on CSS variables defined in `:root` and
 **Explanation:**
 - When the user clicks the moon/sun icon, Javascript toggles the `.dark` class on the `<html>` tag. This instantly swaps all color definitions, and Tailwind recalculates the entire UI in milliseconds.
 
-## 🚀 8. Conclusion
+---
+
+## 🚀 7. Conclusion
 ScanSense AI represents a masterclass in modern, decoupled-yet-unified application design. By abandoning heavy frontend build pipelines and relying on pure Browser APIs and FastAPI streaming, the codebase achieves near-instant startup times, minimal memory footprints, and extreme extensibility.
 
 *(End of Architecture Document)*

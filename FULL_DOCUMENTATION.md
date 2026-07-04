@@ -38,6 +38,10 @@ This app uses an AI brain from a company called Groq. You need a free key to con
    ```
 5. Save the file.
 
+> [!WARNING]
+> The repository may contain a pre-existing `.env` file in the root folder. For runtime security and proper setup, please ensure your actual environment variables are placed in the **`backend/.env`** file. You should also delete or secure any `.env` file in the root folder to prevent API key exposure.
+
+
 ### Step 4: Simple One-Click Start (Automated Script)
 Because this project now uses a unified architecture, we have written a launch script to completely automate starting the server for you!
 
@@ -104,17 +108,36 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+# App Configuration
+PAGE_TITLE = "ScanSense AI"
+LAYOUT = "wide"
+INITIAL_SIDEBAR_STATE = "collapsed"
+
 # Model configuration
 MODEL_NAME = "meta-llama/llama-4-scout-17b-16e-instruct"
+
+# API Configuration
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
+# Prompts
 SYSTEM_PROMPT = """You are a highly specialized and strict medical assistant named ScanSense AI.
 Your ONLY purpose is to assist with medical analysis, health inquiries, and understanding medical documents or images.
 
+RESPONSE FORMATTING RULES (strictly follow these):
+- Always use clean, well-structured markdown.
+- Use ## for main section headings (e.g., ## Radiological Findings).
+- Use ### for sub-headings.
+- Use bullet points (- item) for lists.
+- Use **bold** only for key medical terms or critical values — NOT for every word.
+- Write in clear paragraphs. Do not write walls of text.
+- Never output raw asterisks like ****. Every ** must surround actual emphasized text.
+- Separate sections with a blank line.
+
 CRITICAL CONTENT RULES - DO NOT VIOLATE:
 1. You are strictly forbidden from answering ANY non-medical questions.
-2. If a user asks about coding, math, history, cooking, general advice, or any non-medical topic, you must refuse.
-3. Keep your answers professional, empathetic, and evidence-based.
+2. If a user asks a math question, requests a general message, asks about programming, general knowledge, or ANY non-medical topic, you MUST ONLY reply with: "I am a specialized medical AI. I cannot assist with non-medical inquiries. Please ask me a health or medical-related question."
+3. DO NOT under any circumstances provide the answer to a non-medical question. DO NOT try to be helpful for general inquiries.
+4. Keep responses concise but comprehensive for medical questions.
 """
 ```
 **Explanation:** 
@@ -129,8 +152,11 @@ This file handles the SQLite database, serving as the permanent memory.
 ```python
 import sqlite3
 import datetime
+import os
 
-DB_NAME = "chat.db"
+# Use absolute path for database
+DB_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_NAME = os.path.join(DB_DIR, "chat.db")
 
 def init_db():
     conn = sqlite3.connect(DB_NAME)
@@ -144,6 +170,15 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    
+    # Check if columns exist (for migration)
+    c.execute("PRAGMA table_info(sessions)")
+    columns = [column[1] for column in c.fetchall()]
+    if 'last_context' not in columns:
+        c.execute("ALTER TABLE sessions ADD COLUMN last_context TEXT")
+    if 'last_content_type' not in columns:
+        c.execute("ALTER TABLE sessions ADD COLUMN last_content_type TEXT")
+
     c.execute('''
         CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -158,10 +193,10 @@ def init_db():
     c.execute('''
         CREATE TABLE IF NOT EXISTS memory_summaries (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            session_id INTEGER,
+            session_id INTEGER UNIQUE,
             summary TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (session_id) REFERENCES sessions (id)
+            FOREIGN KEY(session_id) REFERENCES sessions(id)
         )
     ''')
     conn.commit()
@@ -348,13 +383,28 @@ function applyInline(text) {
       const lines = chunkText.split("\n");
       
       for (const line of lines) {
-        if (line.startsWith("data: ") && data !== "[DONE]") {
+        if (line.startsWith("data: ")) {
           const data = line.slice(6);
+          
+          if (data.startsWith("SESSION_ID:")) {
+            const bId = parseInt(data.split(":")[1]);
+            chats[chatIdx].backendId = bId;
+            saveState();
+            continue;
+          }
+
+          if (data === "[DONE]") continue;
+
+          // Replace \r placeholder back to \n
           const cleanData = data.replace(/\r/g, "\n");
           fullResponse += cleanData;
           
-          chats[chatIdx].messages[msgIdx].content = fullResponse;
-          renderMessages();
+          const msgIdx = chats[chatIdx].messages.findIndex(m => m.id === aiMsgId);
+          if (msgIdx !== -1) {
+            chats[chatIdx].messages[msgIdx].content = fullResponse;
+            saveState();
+            renderMessages();
+          }
         }
       }
     }
@@ -649,26 +699,24 @@ This file is the magic behind the "One-Click Start".
 
 ```cmd
 @echo off
-echo =========================================
-echo    ScanSense AI - Bootstrapper
-echo =========================================
+echo 💎 Starting ScanSense AI Unified Connection...
 
-:: 1. Check if virtual environment exists
+:: 1. Setup Backend Environment (Python)
 if not exist venv (
-    echo [CREATE] Creating virtual environment...
+    echo 🏗️ Creating virtual environment...
     python -m venv venv
 )
-echo [ACTIVATE] Activating virtual environment...
+echo 🔄 Activating virtual environment...
 call venv\Scripts\activate.bat
 
-echo [INSTALL] Installing backend dependencies...
+echo 📦 Installing backend dependencies...
 pip install -r backend\requirements.txt
 
 :: 2. Frontend is now Vanilla HTML/JS, no build step required!
-echo [READY] Frontend is ready (Vanilla JS).
+echo 🚀 Frontend is ready (Vanilla JS).
 
 :: 3. Start the Unified Server (FastAPI)
-echo [START] Starting ScanSense AI (Port 8000)...
+echo 🌐 Starting ScanSense AI (Port 8000)...
 cd backend
 python -m uvicorn main:app --reload --port 8000
 ```
