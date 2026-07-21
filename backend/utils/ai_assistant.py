@@ -8,7 +8,13 @@ from ..config.settings import GROQ_API_KEY, MODEL_NAME, SYSTEM_PROMPT
 def get_llm(temperature=0.0):
     if not GROQ_API_KEY:
         raise ValueError("GROQ_API_KEY not found in environment variables.")
-    return ChatGroq(model=MODEL_NAME, api_key=GROQ_API_KEY, temperature=temperature)
+    
+    # Hide slow reasoning trace for Qwen and GPT-OSS models to speed up output
+    kwargs = {}
+    if "qwen" in MODEL_NAME.lower() or "gpt-oss" in MODEL_NAME.lower():
+        kwargs["reasoning_format"] = "hidden"
+        
+    return ChatGroq(model=MODEL_NAME, api_key=GROQ_API_KEY, temperature=temperature, **kwargs)
 
 def is_medical_content(content, content_type):
     llm = get_llm(temperature=0.0)
