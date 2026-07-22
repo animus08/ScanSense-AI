@@ -6,6 +6,13 @@
     <b>An autonomous, guardrail-first medical assistant powered by LangGraph, FastAPI, and Llama 4 via Groq. Intelligently validates, correlates, and analyzes medical reports and diagnostic images in real time.</b>
   </p>
 
+  <p>
+    <a href="https://scansense-ai-nppn.onrender.com" target="_blank">
+      <img src="https://img.shields.io/badge/Live_Demo-scansense--ai--nppn.onrender.com-00C5A2?style=for-the-badge&logo=render&logoColor=white" alt="Live Demo" />
+    </a>
+    <br />
+    <sub>👉 Click the badge above or <a href="https://scansense-ai-nppn.onrender.com" target="_blank"><b>click here</b></a> to visit the live application.</sub>
+  </p>
 
   <p>
     <img src="https://img.shields.io/badge/Python-3.11-blue?logo=python&logoColor=white" />
