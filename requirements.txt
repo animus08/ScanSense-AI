@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+python-multipart
+pydantic
+groq
+python-dotenv
+PyPDF2
+Pillow
+langchain
+langchain-groq
+langgraph
+langchain-core
