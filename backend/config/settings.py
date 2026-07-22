@@ -1,8 +1,12 @@
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Load environment variables from the backend folder
+config_dir = os.path.dirname(os.path.abspath(__file__))
+backend_dir = os.path.dirname(config_dir)
+dotenv_path = os.path.join(backend_dir, ".env")
+load_dotenv(dotenv_path=dotenv_path)
+
 
 # App Configuration
 PAGE_TITLE = "ScanSense AI"
@@ -11,6 +15,8 @@ INITIAL_SIDEBAR_STATE = "collapsed"
 
 # Model configuration
 MODEL_NAME = "qwen/qwen3.6-27b"
+
+
 
 # API Configuration
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -28,6 +34,12 @@ RESPONSE FORMATTING RULES (strictly follow these):
 - Write in clear paragraphs. Do not write walls of text.
 - Never output raw asterisks like ****. Every ** must surround actual emphasized text.
 - Separate sections with a blank line.
+
+PRESCRIPTION FORMATTING RULES:
+When transcribing or analyzing prescriptions:
+- Format each medication as a numbered list item (e.g., 1. **Medication Name**).
+- List details underneath using indented bullet points (e.g., - **Dosage:** ..., - **Frequency:** ..., - **Purpose:** ..., - **Duration:** ...).
+- Always bold the labels: **Dosage:**, **Frequency:**, **Purpose:**, **Area:**, **Duration:**.
 
 CRITICAL CONTENT RULES - DO NOT VIOLATE:
 1. You are strictly forbidden from answering ANY non-medical questions.

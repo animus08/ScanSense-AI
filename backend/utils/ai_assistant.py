@@ -14,7 +14,7 @@ def get_llm(temperature=0.0):
     if "qwen" in MODEL_NAME.lower() or "gpt-oss" in MODEL_NAME.lower():
         kwargs["reasoning_format"] = "hidden"
         
-    return ChatGroq(model=MODEL_NAME, api_key=GROQ_API_KEY, temperature=temperature, **kwargs)
+    return ChatGroq(model=MODEL_NAME, api_key=GROQ_API_KEY, temperature=temperature, max_tokens=4096, **kwargs)
 
 def is_medical_content(content, content_type):
     llm = get_llm(temperature=0.0)
@@ -49,7 +49,7 @@ class ChatState(TypedDict):
 
 def call_model_node(state: ChatState):
     messages = list(state["messages"])
-    llm = get_llm(temperature=0.7)
+    llm = get_llm(temperature=0.0)
     response = llm.invoke(messages)
     return {"messages": [response]}
 

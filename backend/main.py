@@ -84,8 +84,9 @@ async def upload_file(file: UploadFile = File(...)):
             for page in pdf_reader.pages:
                 extracted_context += page.extract_text()
             
-            if not is_medical_content(extracted_context, 'pdf'):
-                raise HTTPException(status_code=400, detail="The uploaded PDF does not appear to be medical in nature.")
+            # Skip pre-flight checks to conserve tokens on free plan
+            # if not is_medical_content(extracted_context, 'pdf'):
+            #     raise HTTPException(status_code=400, detail="The uploaded PDF does not appear to be medical in nature.")
                 
         elif file_ext in ['.png', '.jpg', '.jpeg']:
             content_type = 'image'
@@ -95,8 +96,9 @@ async def upload_file(file: UploadFile = File(...)):
             encoded_image = base64.b64encode(buffered.getvalue()).decode('utf-8')
             extracted_context = encoded_image
             
-            if not is_medical_content(encoded_image, 'image'):
-                raise HTTPException(status_code=400, detail="The uploaded image does not appear to be medical in nature.")
+            # Skip pre-flight checks to conserve tokens on free plan
+            # if not is_medical_content(encoded_image, 'image'):
+            #     raise HTTPException(status_code=400, detail="The uploaded image does not appear to be medical in nature.")
         else:
             raise HTTPException(status_code=400, detail="Unsupported file format")
 
@@ -157,12 +159,13 @@ async def chat_endpoint(request: ChatRequest, background_tasks: BackgroundTasks)
         # Save assistant reply
         save_message(request.session_id, "assistant", full_response)
 
-        # Background: generate & save session summary for long-term memory
-        updated_history = get_chat_history(request.session_id)
-        if len(updated_history) >= 2:
-            summary = summarize_session(updated_history)
-            if summary:
-                save_memory_summary(request.session_id, summary)
+        # Background: generate & save session summary for long-term memory (Disabled to prevent exceeding free 8K TPM rate limits)
+        # updated_history = get_chat_history(request.session_id)
+        # if len(updated_history) >= 2:
+        #     summary = summarize_session(updated_history)
+        #     if summary:
+        #         save_memory_summary(request.session_id, summary)
+
 
         yield "data: [DONE]\n\n"
 

@@ -554,37 +554,53 @@ async function handleSend() {
     const reader = chatRes.body.getReader();
     const decoder = new TextDecoder();
     let fullResponse = "";
+    let buffer = "";
 
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        // Process any remaining text in the buffer
+        if (buffer.trim()) {
+          processLine(buffer);
+        }
+        break;
+      }
 
-      const chunkText = decoder.decode(value, { stream: true });
-      const lines = chunkText.split("\n");
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      // Keep the last partial line (or empty string if ends with \n) in the buffer
+      buffer = lines.pop();
 
       for (const line of lines) {
-        if (line.startsWith("data: ")) {
-          const data = line.slice(6);
+        processLine(line);
+      }
+    }
 
-          if (data.startsWith("SESSION_ID:")) {
-            const bId = parseInt(data.split(":")[1]);
-            chats[chatIdx].backendId = bId;
-            saveState();
-            continue;
-          }
 
-          if (data === "[DONE]") continue;
+    function processLine(line) {
+      const trimmedStart = line.trimStart();
+      if (trimmedStart.startsWith("data: ")) {
+        const dataIndex = line.indexOf("data: ");
+        const data = line.slice(dataIndex + 6);
 
-          // Replace \r placeholder back to \n
-          const cleanData = data.replace(/\r/g, "\n");
-          fullResponse += cleanData;
+        if (data.startsWith("SESSION_ID:")) {
+          const bId = parseInt(data.split(":")[1]);
+          chats[chatIdx].backendId = bId;
+          saveState();
+          return;
+        }
 
-          const msgIdx = chats[chatIdx].messages.findIndex(m => m.id === aiMsgId);
-          if (msgIdx !== -1) {
-            chats[chatIdx].messages[msgIdx].content = fullResponse;
-            saveState();
-            renderMessages();
-          }
+        if (data.trim() === "[DONE]") return;
+
+        // Replace \r placeholder back to \n
+        const cleanData = data.replace(/\r/g, "\n");
+        fullResponse += cleanData;
+
+        const msgIdx = chats[chatIdx].messages.findIndex(m => m.id === aiMsgId);
+        if (msgIdx !== -1) {
+          chats[chatIdx].messages[msgIdx].content = fullResponse;
+          saveState();
+          renderMessages();
         }
       }
     }

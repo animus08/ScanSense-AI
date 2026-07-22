@@ -17,5 +17,4 @@ echo 🚀 Frontend is ready (Vanilla JS).
 
 :: 3. Start the Unified Server (FastAPI)
 echo 🌐 Starting ScanSense AI (Port 8000)...
-cd backend
-python -m uvicorn main:app --reload --port 8000
+python -m uvicorn backend.main:app --reload --port 8000

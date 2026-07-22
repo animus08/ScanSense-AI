@@ -7,7 +7,7 @@ import sys
 # Add working directory to sys path so we can import utils
 sys.path.insert(0, os.path.abspath('.'))
 
-from utils.ai_assistant import is_medical_content, stream_chat_response
+from backend.utils.ai_assistant import is_medical_content, stream_chat_response
 
 print("Testing is_medical_content (pdf text):")
 is_med = is_medical_content("The patient presents with severe migraines and nausea. MRI scan scheduled.", "pdf")

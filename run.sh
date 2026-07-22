@@ -20,5 +20,4 @@ echo "🚀 Frontend is ready (Vanilla JS)."
 # 3. Start the Unified Server (FastAPI)
 echo "💎 Starting ScanSense AI (Unified Server)..."
 echo "🌐 Your app will be available at http://localhost:8000"
-cd backend
-python -m uvicorn main:app --reload --port 8000
+python3 -m uvicorn backend.main:app --reload --port 8000
