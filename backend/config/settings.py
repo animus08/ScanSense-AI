@@ -20,6 +20,7 @@ MODEL_NAME = "qwen/qwen3.6-27b"
 
 # API Configuration
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
 # Prompts
 SYSTEM_PROMPT = """You are a highly specialized and strict medical assistant named ScanSense AI.

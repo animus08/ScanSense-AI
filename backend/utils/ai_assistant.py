@@ -3,9 +3,49 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AI
 from langchain_groq import ChatGroq
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
-from ..config.settings import GROQ_API_KEY, MODEL_NAME, SYSTEM_PROMPT
+from langchain_community.tools.tavily_search import TavilySearchResults
+from ..config.settings import GROQ_API_KEY, TAVILY_API_KEY, MODEL_NAME, SYSTEM_PROMPT
 
-def get_llm(temperature=0.0):
+def clean_tavily_content(text: str) -> str:
+    if not text:
+        return ""
+    # Normalize multiple spaces and newlines
+    cleaned = " ".join(text.split())
+    # Limit length to 220 characters to ensure clean, neat presentation
+    if len(cleaned) > 220:
+        cleaned = cleaned[:217] + "..."
+    return cleaned
+
+def run_tavily_search(query: str) -> str:
+    """Executes a search using TavilySearchResults and formats results into a markdown string."""
+    if not TAVILY_API_KEY:
+        return ""
+    try:
+        # Initialize search tool with api key and max 3 results to conserve output space
+        search_tool = TavilySearchResults(max_results=3, api_key=TAVILY_API_KEY)
+        results = search_tool.invoke({"query": query})
+        
+        if not results:
+            return ""
+            
+        search_md = "\n\n## 📚 Relevant Medical Literature & Studies\n"
+        for idx, res in enumerate(results, 1):
+            content = clean_tavily_content(res.get("content", ""))
+            url = res.get("url", "")
+            
+            # Extract domain to show source credibility
+            from urllib.parse import urlparse
+            domain = urlparse(url).netloc
+            title = f"Clinical Study Reference {idx} ({domain})"
+            
+            search_md += f"> 🔗 **[{title}]({url})**\n"
+            search_md += f"> * **Key Finding:** {content}\n>\n"
+        return search_md
+    except Exception as e:
+        print(f"Tavily Search Error: {e}")
+        return ""
+
+def get_llm(temperature=0.2):
     if not GROQ_API_KEY:
         raise ValueError("GROQ_API_KEY not found in environment variables.")
     
@@ -49,7 +89,7 @@ class ChatState(TypedDict):
 
 def call_model_node(state: ChatState):
     messages = list(state["messages"])
-    llm = get_llm(temperature=0.0)
+    llm = get_llm(temperature=0.2)
     response = llm.invoke(messages)
     return {"messages": [response]}
 
@@ -93,12 +133,44 @@ def summarize_session(chat_history: list) -> str:
         return ""
 
 
-def stream_chat_response(chat_history, context, content_type, user_text, long_term_memories=None):
+def stream_chat_response(chat_history, context, content_type, user_text, long_term_memories=None,
+                         analysis_depth="Detailed", include_differential=True, patient_friendly=False):
     """
     Generator that streams the response from the LangGraph execution.
     Incorporates both short-term (session history) and long-term (past summaries) memory.
     """
-    messages = [SystemMessage(content=SYSTEM_PROMPT)]
+    # Build dynamic prompt modifications
+    dynamic_instructions = "\n\nCRITICAL ANALYSIS CONFIGURATION:"
+    
+    # 1. Depth Configuration
+    if analysis_depth == "Basic":
+        dynamic_instructions += "\n- Provide a very brief, high-level analysis of under 100 words. Focus strictly on the primary issue."
+    elif analysis_depth == "Comprehensive":
+        dynamic_instructions += "\n- Provide an extremely thorough, exhaustive clinical report. Detail all abnormalities, technical values, and implications."
+    else: # Detailed
+        dynamic_instructions += "\n- Provide a standard detailed analysis (findings, assessment, and recommendations)."
+
+    # 2. Differential Configuration
+    if include_differential:
+        dynamic_instructions += (
+            "\n- You MUST include a section titled '## Differential Diagnoses' listing 2-3 potential alternative diagnoses "
+            "with confidence levels (e.g., [High/Moderate/Low]) and short justifications."
+        )
+    else:
+        dynamic_instructions += "\n- Do NOT include any differential or alternative diagnoses."
+
+    # 3. Patient Friendly Configuration
+    if patient_friendly:
+        dynamic_instructions += (
+            "\n- You MUST append a concluding section titled '## Patient-Friendly Summary'. "
+            "Translate all complex medical terminology, diagnoses, and findings into simple, reassuring, jargon-free explanations (max 100 words)."
+        )
+
+    # 4. Token limit safety guardrail
+    dynamic_instructions += "\n- Keep your final markdown analysis structured, clinical, and concise (under 600 words total) to prevent exceeding the model's output limit."
+
+    current_system_prompt = SYSTEM_PROMPT + dynamic_instructions
+    messages = [SystemMessage(content=current_system_prompt)]
 
     # --- LONG-TERM MEMORY ---
     # Inject summaries of past relevant sessions at the top
@@ -151,9 +223,39 @@ def stream_chat_response(chat_history, context, content_type, user_text, long_te
     }
 
     try:
+        full_response = ""
         for event in chatbot_app.stream(state, stream_mode="messages"):
             chunk, metadata = event
             if chunk.content and isinstance(chunk.content, str):
+                full_response += chunk.content
                 yield chunk.content
+        
+        # Perform Tavily web search if Comprehensive mode and key is available
+        if analysis_depth == "Comprehensive" and TAVILY_API_KEY:
+            yield "\n\n--\n"
+            yield "\n🔍 *Fetching live medical literature resources...*\n"
+            
+            # Extract diagnoses dynamically from full_response using regex
+            import re
+            diagnoses = []
+            diag_match = re.search(r"##\s*Diagnos(?:es|is).*?\n(.*?)(?=\n##|$)", full_response, re.IGNORECASE | re.DOTALL)
+            
+            if diag_match:
+                # Retrieve bold titles from the bullet points (e.g., - **Pityriasis versicolor**:)
+                bold_terms = re.findall(r"\*\*(.*?)\*\*", diag_match.group(1))
+                diagnoses = [term.strip() for term in bold_terms if len(term.strip()) > 3]
+            
+            # Build search query containing actual diagnosed conditions
+            if diagnoses:
+                search_query = f"recent clinical guidelines medical research {' '.join(diagnoses[:2])}"
+            else:
+                search_query = f"recent medical research study radiology diagnosis {user_text[:80]}"
+                
+            search_md = run_tavily_search(search_query)
+            if search_md:
+                yield search_md
+            else:
+                yield "\n*(No matching medical literature found)*\n"
+                
     except Exception as e:
         yield f"\nAPI Error: {e}"
