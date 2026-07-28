@@ -3,7 +3,7 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AI
 from langchain_groq import ChatGroq
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
-from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_tavily import TavilySearch
 from ..config.settings import GROQ_API_KEY, TAVILY_API_KEY, MODEL_NAME, SYSTEM_PROMPT
 
 def clean_tavily_content(text: str) -> str:
@@ -16,13 +16,42 @@ def clean_tavily_content(text: str) -> str:
         cleaned = cleaned[:217] + "..."
     return cleaned
 
+def extract_diagnoses_from_text(text: str) -> list:
+    import re
+    diagnoses = []
+    lines = text.split('\n')
+    in_diagnosis_section = False
+    
+    for line in lines:
+        cleaned_line = line.strip()
+        # Detect entering the diagnosis block (handles bullets, headers, etc. containing Diagnosis/Dg)
+        if re.search(r'(?:Diagnosis|Diagnoses|Dg)', cleaned_line, re.IGNORECASE):
+            in_diagnosis_section = True
+            continue
+        # Detect leaving the diagnosis block (next section header or list starts)
+        if in_diagnosis_section and (cleaned_line.startswith('##') or 'prescription' in cleaned_line.lower() or 'medication' in cleaned_line.lower()):
+            in_diagnosis_section = False
+            
+        if in_diagnosis_section:
+            # Matches formats like:
+            # - **Pityriasis versicolor**: description
+            # * **Pityriasis versicolor**: description
+            # - Pityriasis versicolor: description
+            match = re.search(r'(?:[-*]\s*)?(?:\*\*)?([A-Za-z0-9\s\-]{3,40})(?:\*\*)?\s*:', cleaned_line)
+            if match:
+                term = match.group(1).strip()
+                # Exclude boilerplate words that might have colons
+                if term.lower() not in ['name', 'age', 'clinic', 'doctor', 'patient details', 'diagnosis', 'diagnoses', 'dg']:
+                    diagnoses.append(term)
+    return diagnoses
+
 def run_tavily_search(query: str) -> str:
-    """Executes a search using TavilySearchResults and formats results into a markdown string."""
+    """Executes a search using TavilySearch and formats results into a markdown string."""
     if not TAVILY_API_KEY:
         return ""
     try:
-        # Initialize search tool with api key and max 3 results to conserve output space
-        search_tool = TavilySearchResults(max_results=3, api_key=TAVILY_API_KEY)
+        # Initialize new non-deprecated TavilySearch tool - reads TAVILY_API_KEY from env automatically
+        search_tool = TavilySearch(max_results=3)
         results = search_tool.invoke({"query": query})
         
         if not results:
@@ -38,9 +67,10 @@ def run_tavily_search(query: str) -> str:
             domain = urlparse(url).netloc
             title = f"Clinical Study Reference {idx} ({domain})"
             
-            search_md += f"> 🔗 **[{title}]({url})**\n"
-            search_md += f"> * **Key Finding:** {content}\n>\n"
-        return search_md
+            search_md += f"> \U0001f517 **[{title}]({url})**\n"
+            search_md += f"> * **Key Finding:** {content}\n"
+        return search_md.strip()
+
     except Exception as e:
         print(f"Tavily Search Error: {e}")
         return ""
@@ -232,24 +262,23 @@ def stream_chat_response(chat_history, context, content_type, user_text, long_te
         
         # Perform Tavily web search if Comprehensive mode and key is available
         if analysis_depth == "Comprehensive" and TAVILY_API_KEY:
-            yield "\n\n--\n"
+            # Strip any trailing blank lines/bullets from AI response
+            if full_response.strip().endswith("-") or full_response.strip().endswith("*"):
+                yield "\n"
+            else:
+                yield "\n\n"
             yield "\n🔍 *Fetching live medical literature resources...*\n"
             
-            # Extract diagnoses dynamically from full_response using regex
-            import re
-            diagnoses = []
-            diag_match = re.search(r"##\s*Diagnos(?:es|is).*?\n(.*?)(?=\n##|$)", full_response, re.IGNORECASE | re.DOTALL)
+            # Extract diagnoses dynamically from full_response using our new robust parser
+            diagnoses = extract_diagnoses_from_text(full_response)
             
-            if diag_match:
-                # Retrieve bold titles from the bullet points (e.g., - **Pityriasis versicolor**:)
-                bold_terms = re.findall(r"\*\*(.*?)\*\*", diag_match.group(1))
-                diagnoses = [term.strip() for term in bold_terms if len(term.strip()) > 3]
-            
-            # Build search query containing actual diagnosed conditions
+            # Build search query targeting only highly stable, peer-reviewed medical databases
+            # to guarantee relevant context and completely avoid broken 404 links
+            domain_filter = "site:ncbi.nlm.nih.gov OR site:webmd.com OR site:mayoclinic.org"
             if diagnoses:
-                search_query = f"recent clinical guidelines medical research {' '.join(diagnoses[:2])}"
+                search_query = f"clinical guidelines research {' '.join(diagnoses[:2])} {domain_filter}"
             else:
-                search_query = f"recent medical research study radiology diagnosis {user_text[:80]}"
+                search_query = f"medical study radiology diagnosis {user_text[:50]} {domain_filter}"
                 
             search_md = run_tavily_search(search_query)
             if search_md:

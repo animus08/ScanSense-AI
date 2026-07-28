@@ -11,3 +11,4 @@ langchain-groq
 langgraph
 langchain-core
 langchain-community
+langchain-tavily
