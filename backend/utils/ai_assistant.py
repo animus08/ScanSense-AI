@@ -35,9 +35,9 @@ def extract_diagnoses_from_text(text: str) -> list:
         if in_diagnosis_section:
             # Matches formats like:
             # - **Pityriasis versicolor**: description
-            # * **Pityriasis versicolor**: description
-            # - Pityriasis versicolor: description
-            match = re.search(r'(?:[-*]\s*)?(?:\*\*)?([A-Za-z0-9\s\-]{3,40})(?:\*\*)?\s*:', cleaned_line)
+            # • Tinea Corporis [High]: description
+            # - **Tinea Corporis** [Moderate Confidence]: description
+            match = re.search(r'(?:[-*•]\s*)?(?:\*\*)?([A-Za-z0-9\s\-]+?)(?:\s*\[[A-Za-z\s]+\])?(?:\*\*)?\s*:', cleaned_line)
             if match:
                 term = match.group(1).strip()
                 # Exclude boilerplate words that might have colons
