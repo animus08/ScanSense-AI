@@ -34,9 +34,9 @@ def startup_event():
     try:
         # Make sure we're initializing the SQLite tables
         init_db()
-        print("✅ Database initialized successfully")
+        print("[OK] Database initialized successfully")
     except Exception as e:
-        print(f"❌ Database initialization error: {str(e)}")
+        print(f"[ERROR] Database initialization error: {str(e)}")
         raise
 
 # Models
@@ -45,6 +45,9 @@ class ChatRequest(BaseModel):
     message: str
     context: Optional[str] = None
     content_type: Optional[str] = None
+    analysis_depth: Optional[str] = "Detailed"
+    include_differential: Optional[bool] = True
+    patient_friendly: Optional[bool] = False
 
 class SessionCreate(BaseModel):
     title: Optional[str] = None
@@ -148,7 +151,10 @@ async def chat_endpoint(request: ChatRequest, background_tasks: BackgroundTasks)
             context=current_context,
             content_type=current_content_type,
             user_text=request.message,
-            long_term_memories=long_term_memories
+            long_term_memories=long_term_memories,
+            analysis_depth=request.analysis_depth,
+            include_differential=request.include_differential,
+            patient_friendly=request.patient_friendly
         ):
             full_response += chunk
             # Standard SSE has issues with raw newlines in 'data:' chunks.

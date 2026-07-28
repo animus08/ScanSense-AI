@@ -47,6 +47,12 @@ function renderMarkdown(text) {
       const content = line.replace(/^\s*\d+\.\s*/, '');
       output.push('<li>' + applyInline(content) + '</li>');
     }
+    // Blockquote
+    else if (/^\s*&gt;\s*(.+)/.test(line)) {
+      if (inList) { output.push('</ul>'); inList = false; }
+      const content = line.replace(/^\s*&gt;\s*/, '');
+      output.push('<blockquote class="border-l-4 border-primary pl-3 italic text-muted-foreground my-2">' + applyInline(content) + '</blockquote>');
+    }
     // Empty line
     else if (line.trim() === '') {
       if (inList) { output.push('</ul>'); inList = false; }
@@ -78,6 +84,8 @@ function renderMarkdown(text) {
 function applyInline(text) {
   if (!text) return '';
   return text
+    // Handle links: [text](url)
+    .replace(/\[(.+?)\]\((https?:\/\/.+?)\)/g, '<a href="$2" target="_blank" class="text-primary hover:underline font-medium">$1</a>')
     // Handle triple bold/italic
     .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
     .replace(/___(.+?)___/g, '<strong><em>$1</em></strong>')
@@ -216,6 +224,27 @@ function initSidebar() {
   const closeMobileSidebar = () => dom.mobileSidebarContainer.classList.add('hidden');
   dom.btnCloseSidebar.addEventListener('click', closeMobileSidebar);
   dom.mobileSidebarBackdrop.addEventListener('click', closeMobileSidebar);
+
+  // Sync Desktop and Mobile sidebar configurations
+  const depthDesktop = document.getElementById('select-depth-desktop');
+  const depthMobile = document.getElementById('select-depth-mobile');
+  const diffDesktop = document.getElementById('toggle-diff-desktop');
+  const diffMobile = document.getElementById('toggle-diff-mobile');
+  const patientDesktop = document.getElementById('toggle-patient-desktop');
+  const patientMobile = document.getElementById('toggle-patient-mobile');
+
+  if (depthDesktop && depthMobile) {
+    depthDesktop.addEventListener('change', (e) => { depthMobile.value = e.target.value; });
+    depthMobile.addEventListener('change', (e) => { depthDesktop.value = e.target.value; });
+  }
+  if (diffDesktop && diffMobile) {
+    diffDesktop.addEventListener('change', (e) => { diffMobile.checked = e.target.checked; });
+    diffMobile.addEventListener('change', (e) => { diffDesktop.checked = e.target.checked; });
+  }
+  if (patientDesktop && patientMobile) {
+    patientDesktop.addEventListener('change', (e) => { patientMobile.checked = e.target.checked; });
+    patientMobile.addEventListener('change', (e) => { patientDesktop.checked = e.target.checked; });
+  }
 }
 
 // --- Input & File Logic ---
@@ -536,6 +565,15 @@ async function handleSend() {
       }
     }
 
+    // Read active settings
+    const selectDepth = document.getElementById('select-depth-desktop');
+    const toggleDiff = document.getElementById('toggle-diff-desktop');
+    const togglePatient = document.getElementById('toggle-patient-desktop');
+
+    const analysisDepth = selectDepth ? selectDepth.value : 'Detailed';
+    const includeDifferential = toggleDiff ? toggleDiff.checked : true;
+    const patientFriendly = togglePatient ? togglePatient.checked : false;
+
     // Call Chat API with SSE
     const chatRes = await fetch("/api/chat", {
       method: "POST",
@@ -545,6 +583,9 @@ async function handleSend() {
         session_id: chats[chatIdx].backendId || null,
         context: uploadedContext || undefined,
         content_type: uploadedContentType || undefined,
+        analysis_depth: analysisDepth,
+        include_differential: includeDifferential,
+        patient_friendly: patientFriendly,
       }),
     });
 
