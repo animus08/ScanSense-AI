@@ -50,8 +50,12 @@ def run_tavily_search(query: str) -> str:
     if not TAVILY_API_KEY:
         return ""
     try:
-        # Initialize new non-deprecated TavilySearch tool - reads TAVILY_API_KEY from env automatically
-        search_tool = TavilySearch(max_results=3)
+        # Initialize new non-deprecated TavilySearch tool - reads TAVILY_API_KEY and include_domains natively
+        search_tool = TavilySearch(
+            max_results=3,
+            api_key=TAVILY_API_KEY,
+            include_domains=["ncbi.nlm.nih.gov", "webmd.com", "mayoclinic.org"]
+        )
         results = search_tool.invoke({"query": query})
         
         if not results:
@@ -272,13 +276,10 @@ def stream_chat_response(chat_history, context, content_type, user_text, long_te
             # Extract diagnoses dynamically from full_response using our new robust parser
             diagnoses = extract_diagnoses_from_text(full_response)
             
-            # Build search query targeting only highly stable, peer-reviewed medical databases
-            # to guarantee relevant context and completely avoid broken 404 links
-            domain_filter = "site:ncbi.nlm.nih.gov OR site:webmd.com OR site:mayoclinic.org"
             if diagnoses:
-                search_query = f"clinical guidelines research {' '.join(diagnoses[:2])} {domain_filter}"
+                search_query = f"clinical guidelines research {' '.join(diagnoses[:2])}"
             else:
-                search_query = f"medical study radiology diagnosis {user_text[:50]} {domain_filter}"
+                search_query = f"medical study radiology diagnosis {user_text[:50]}"
                 
             search_md = run_tavily_search(search_query)
             if search_md:
