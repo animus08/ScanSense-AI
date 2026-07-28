@@ -56,7 +56,8 @@ def run_tavily_search(query: str) -> str:
             api_key=TAVILY_API_KEY,
             include_domains=["ncbi.nlm.nih.gov", "webmd.com", "mayoclinic.org"]
         )
-        results = search_tool.invoke({"query": query})
+        results_dict = search_tool.invoke({"query": query})
+        results = results_dict.get("results") if isinstance(results_dict, dict) else []
         
         if not results:
             return ""
@@ -277,7 +278,7 @@ def stream_chat_response(chat_history, context, content_type, user_text, long_te
             diagnoses = extract_diagnoses_from_text(full_response)
             
             if diagnoses:
-                search_query = f"clinical guidelines research {' '.join(diagnoses[:2])}"
+                search_query = f"clinical guidelines research {diagnoses[0]}"
             else:
                 search_query = f"medical study radiology diagnosis {user_text[:50]}"
                 
