@@ -3,15 +3,15 @@
   <img src="./images/logo_title.png" alt="ScanSense AI" width="300" />
 
   <p>
-    <b>An autonomous, guardrail-first medical assistant powered by LangGraph, FastAPI, and Llama 4 via Groq. Intelligently validates, correlates, and analyzes medical reports and diagnostic images in real time.</b>
+    <b>An autonomous, guardrail-first medical assistant powered by LangGraph, FastAPI, and Qwen 3.6 27B via Groq. Intelligently validates, correlates, and analyzes medical reports and diagnostic images in real time.</b>
   </p>
 
   <p>
-    <a href="https://scansense-ai-nppn.onrender.com" target="_blank">
-      <img src="https://img.shields.io/badge/Live_Demo-scansense--ai--nppn.onrender.com-00C5A2?style=for-the-badge&logo=render&logoColor=white" alt="Live Demo" />
+    <a href="https://scansense-ai.vercel.app/" target="_blank">
+      <img src="https://img.shields.io/badge/Live_Demo-scansense--ai.vercel.app-00C5A2?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo" />
     </a>
     <br />
-    <sub>👉 Click the badge above or <a href="https://scansense-ai-nppn.onrender.com" target="_blank"><b>click here</b></a> to visit the live application.</sub>
+    <sub>👉 Click the badge above or <a href="https://scansense-ai.vercel.app/" target="_blank"><b>click here</b></a> to visit the live application.</sub>
   </p>
 
   <p>
@@ -19,7 +19,7 @@
     <img src="https://img.shields.io/badge/FastAPI-0.111-009688?logo=fastapi&logoColor=white" />
     <img src="https://img.shields.io/badge/Vanilla_JS-Build--Free-yellow?logo=javascript&logoColor=black" />
     <img src="https://img.shields.io/badge/LangGraph-Orchestrated-blueviolet" />
-    <img src="https://img.shields.io/badge/LLM-Llama_4_Scout_17B-blueviolet" />
+    <img src="https://img.shields.io/badge/LLM-Qwen_3.6_27B-blueviolet" />
     <img src="https://img.shields.io/badge/SQLite-Database-003B57?logo=sqlite&logoColor=white" />
     <img src="https://img.shields.io/badge/License-MIT-green" />
   </p>
@@ -110,9 +110,9 @@ ScanSense AI routes all context and messages through a stateless LangGraph workf
 
 | Phase | Agent / Function | Model | Task |
 |---|---|---|---|
-| **1: Validation** | `is_medical_content()` | Llama 4 Scout (Groq) | Runs pre-flight validation on the input text/image context at `temperature=0.0`. Returns `True` (YES) or `False` (NO). |
-| **2: Orchestration** | `stream_chat_response()` | Llama 4 Scout (Groq) | Merges the system prompt, short-term history, active file context, and the top 5 long-term session summaries, then streams responses. |
-| **3: Memory Summary** | `summarize_session()` | Llama 4 Scout (Groq) | Runs asynchronously in the background once a chat session has $\ge 2$ exchanges to write a 3-sentence summary stored in `memory_summaries`. |
+| **1: Validation** | `is_medical_content()` | Qwen 3.6 27B (Groq) | Runs pre-flight validation on the input text/image context at `temperature=0.0`. Returns `True` (YES) or `False` (NO). |
+| **2: Orchestration** | `stream_chat_response()` | Qwen 3.6 27B (Groq) | Merges the system prompt, short-term history, active file context, and the top 5 long-term session summaries, then streams responses. |
+| **3: Memory Summary** | `summarize_session()` | Qwen 3.6 27B (Groq) | Runs asynchronously in the background once a chat session has $\ge 2$ exchanges to write a 3-sentence summary stored in `memory_summaries`. |
 
 ---
 
@@ -124,7 +124,7 @@ ScanSense AI routes all context and messages through a stateless LangGraph workf
 |---|---|
 | **API Framework** | FastAPI (Python 3.11) + Uvicorn |
 | **Orchestration** | LangGraph + LangChain Core |
-| **Primary LLM** | Meta Llama 4 Scout 17B via Groq API (Deterministic Temperature: 0.0 for validation, Conversational: 0.7) |
+| **Primary LLM** | Qwen 3.6 27B via Groq API (Deterministic Temperature: 0.0 for validation, Conversational: 0.2/0.5) |
 | **File Handlers** | PyPDF2 (PDF text extraction), PIL / Pillow (Image processing) |
 | **Database** | SQLite3 (Direct driver logic) |
 
