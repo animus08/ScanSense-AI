@@ -242,3 +242,5 @@ Open your browser and navigate to:
 http://localhost:8000
 ```
 You can now start chatting, uploading reports, and analyzing medical diagnostic files!
+   
+ 
