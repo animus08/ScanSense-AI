@@ -2,17 +2,19 @@
 
   <img src="./images/logo_title.png" alt="ScanSense AI" width="300" />
 
-  <p>
-    <b>An autonomous, guardrail-first medical assistant powered by LangGraph, FastAPI, and Qwen 3.6 27B via Groq. Intelligently validates, correlates, and analyzes medical reports and diagnostic images in real time.</b>
-  </p>
+  <br /><br />
 
-  <p>
-    <a href="https://scansense-ai.vercel.app/" target="_blank">
-      <img src="https://img.shields.io/badge/Live_Demo-scansense--ai.vercel.app-00C5A2?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo" />
-    </a>
-    <br />
-    <sub>👉 Click the badge above or <a href="https://scansense-ai.vercel.app/" target="_blank"><b>click here</b></a> to visit the live application.</sub>
-  </p>
+  <p><b>An autonomous, guardrail-first medical assistant powered by LangGraph, FastAPI, and Qwen 3.6 27B via Groq. Intelligently validates, correlates, and analyzes medical reports and diagnostic images in real time.</b></p>
+
+  <br />
+
+  <a href="https://scansense-ai.vercel.app/" target="_blank">
+    <img src="https://img.shields.io/badge/Live_Demo-scansense--ai.vercel.app-00C5A2?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo" />
+  </a>
+  <br />
+  <sub>👉 Click the badge above or <a href="https://scansense-ai.vercel.app/" target="_blank"><b>click here</b></a> to visit the live application.</sub>
+
+  <br /><br />
 
   <p>
     <img src="https://img.shields.io/badge/Python-3.11-blue?logo=python&logoColor=white" />
@@ -25,6 +27,8 @@
   </p>
 
 </div>
+
+<br />
 
 ---
 
@@ -64,19 +68,12 @@ It features a **Build-Free Unified Architecture**: a high-performance FastAPI se
 
 ## ✨ Key Features
 
-<ul>
-  <li><b>🧠 Multimodal Visual Analysis</b> — Upload raw PDFs (blood tests, prescriptions) or medical images (X-rays, MRIs) and ask questions directly.</li>
-  <br />
-  <li><b>🛡️ Strict Domain Guardrails</b> — Double-layer prompt engineering completely refuses to answer non-medical topics (coding, general Q&A, math).</li>
-  <br />
-  <li><b>⚡ Progressive Server-Sent Events (SSE)</b> — Streams assistant responses token-by-token. Implements a Carriage Return Hack (<code>\n</code> to <code>\r</code>) to prevent raw SSE chunk breaks.</li>
-  <br />
-  <li><b>💾 Relational Session Memory</b> — Retains context locally in SQLite across three schema tables: <code>sessions</code>, <code>messages</code>, and <code>memory_summaries</code>.</li>
-  <br />
-  <li><b>📝 Lightweight Regex Markdown Parser</b> — Built-in custom JS script renders markdown layout (headings, lists, bold text, horizontal rules) dynamically without bulky libraries.</li>
-  <br />
-  <li><b>🚀 One-Click Bootstrapper</b> — Native start scripts automatically configure virtual environments, resolve pip modules, and launch the application.</li>
-</ul>
+- **🧠 Multimodal Visual Analysis** — Upload raw PDFs (blood tests, prescriptions) or medical images (X-rays, MRIs) and ask questions directly.
+- **🛡️ Strict Domain Guardrails** — Double-layer prompt engineering completely refuses to answer non-medical topics (coding, general Q&A, math).
+- **⚡ Progressive Server-Sent Events (SSE)** — Streams assistant responses token-by-token. Implements a Carriage Return Hack (`\n` to `\r`) to prevent raw SSE chunk breaks.
+- **💾 Relational Session Memory** — Retains context locally in SQLite across three schema tables: `sessions`, `messages`, and `memory_summaries`.
+- **📝 Lightweight Regex Markdown Parser** — Built-in custom JS script renders markdown layout (headings, lists, bold text, horizontal rules) dynamically without bulky libraries.
+- **🚀 One-Click Bootstrapper** — Native start scripts automatically configure virtual environments, resolve pip modules, and launch the application.
 
 ---
 
@@ -242,5 +239,3 @@ Open your browser and navigate to:
 http://localhost:8000
 ```
 You can now start chatting, uploading reports, and analyzing medical diagnostic files!
-   
- 
